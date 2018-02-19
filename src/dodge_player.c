@@ -115,6 +115,7 @@ godot_string get_node_name(godot_object *instance) {
 	static godot_method_bind *mb = NULL;
 	if (!mb) {
 		printf("get method %s::%s\n", class_name, method_name);
+		// NOTE: call succeeds
 		mb = api->godot_method_bind_get_method(class_name, method_name);
 	}
 
@@ -138,7 +139,7 @@ godot_node_path get_node_path(godot_object *instance) {
 	static godot_method_bind *mb = NULL;
 	if (!mb) {
 		printf("get method %s::%s\n", class_name, method_name);
-		// NOTE: this call succeeds
+		// NOTE: this call FAILs!
 		mb = api->godot_method_bind_get_method(class_name, method_name);
 	}
 
@@ -162,7 +163,7 @@ godot_object *get_node(godot_object *instance, wchar_t *node_name) {
 	static godot_method_bind *mb = NULL;
 	if (!mb) {
 		printf("get method %s::%s\n", class_name, method_name);
-		// NOTE: this call succeeds
+		// NOTE: call succeeds
 		mb = api->godot_method_bind_get_method(class_name, method_name);
 	}
 
@@ -196,7 +197,7 @@ void set_animation(godot_object *animated_sprite, char *anim_name) {
 	static godot_method_bind *mb = NULL;
 	if (!mb) {
 		printf("get method %s::%s\n", class_name, method_name);
-		// NOTE: this call succeeds
+		// NOTE: call succeeds
 		mb = api->godot_method_bind_get_method(class_name, method_name);
 	}
 
