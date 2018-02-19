@@ -20,6 +20,8 @@ void set_animation(godot_object *animated_sprite, char *anim_name);
 godot_node_path get_node_path(godot_object *instance);
 godot_object *get_node(godot_object *instance, wchar_t *node_name);
 godot_string get_node_name(godot_object *instance);
+void check_methods(godot_object *instance);
+godot_bool has_method(godot_variant *variant, char *method);
 
 // library init
 void GDN_EXPORT godot_gdnative_init(godot_gdnative_init_options *p_options) {
@@ -82,6 +84,8 @@ godot_variant ready(godot_object *p_instance, void *p_method_data, void *p_user_
 
 	printf( "ready!\n" );
 
+	check_methods(p_instance);
+
 	godot_string node_name = get_node_name(p_instance);
 
 	// NOTE: prints an empty string?
@@ -104,6 +108,39 @@ godot_variant ready(godot_object *p_instance, void *p_method_data, void *p_user_
 godot_variant process(godot_object *p_instance, void *p_method_data, void *p_user_data, int p_num_args, godot_variant **p_args) {
 	godot_variant ret;
 	printf( "process\n" );
+	return ret;
+}
+
+void check_methods(godot_object *instance) {
+	godot_variant v;
+	api->godot_variant_new_object(&v, instance);
+
+	// Prints 17 == Object
+	printf("Variant type=%d\n", api->godot_variant_get_type(&v));
+
+	// Node methods, all false?
+	printf("has get_path: %s\n", has_method(&v, "get_path") ? "true" : "false");
+	printf("has get_node: %s\n", has_method(&v, "get_node") ? "true" : "false");
+	printf("has get_child_count: %s\n", has_method(&v, "get_child_count") ? "true" : "false");
+	printf("has is_processing: %s\n", has_method(&v, "is_processing") ? "true" : "false");
+	printf("has get_tree: %s\n", has_method(&v, "get_tree") ? "true" : "false");
+	printf("has find_node: %s\n", has_method(&v, "find_node") ? "true" : "false");
+
+	// Node member variable getter/setter?
+	printf("has get_name: %s\n", has_method(&v, "get_name") ? "true" : "false");
+	printf("has set_name: %s\n", has_method(&v, "set_name") ? "true" : "false");
+
+	// Object methods, all false too?
+	printf("has callv: %s\n", has_method(&v, "Object::callv") ? "true" : "false");
+	printf("has emit_signal: %s\n", has_method(&v, "emit_signal") ? "true" : "false");
+
+	api->godot_variant_destroy(&v);
+}
+
+godot_bool has_method(godot_variant *variant, char *method) {
+	godot_string method_name = api->godot_string_chars_to_utf8(method);
+	godot_bool ret = api->godot_variant_has_method(variant, &method_name);
+	api->godot_string_destroy(&method_name);
 	return ret;
 }
 
