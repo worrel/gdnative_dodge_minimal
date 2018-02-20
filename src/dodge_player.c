@@ -1,11 +1,9 @@
+#include "dodge.h"
 #include <gdnative_api_struct.gen.h>
 #include <wchar.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-const godot_gdnative_core_api_struct *api = NULL;
-const godot_gdnative_ext_nativescript_api_struct *nativescript_api = NULL;
 
 // instance constructor/destructor
 GDCALLINGCONV void *player_constructor(godot_object *p_instance, void *p_method_data);
@@ -18,33 +16,10 @@ godot_variant process(godot_object *p_instance, void *p_method_data, void *p_use
 // call-out methods
 void set_animation(godot_object *animated_sprite, char *anim_name);
 godot_node_path get_node_path(godot_object *instance);
-godot_object *get_node(godot_object *instance, wchar_t *node_name);
+godot_object *get_node(godot_object *instance, char *node_name);
 godot_string get_node_name(godot_object *instance);
-void check_methods(godot_object *instance);
-godot_bool has_method(godot_variant *variant, char *method);
 
-// library init
-void GDN_EXPORT godot_gdnative_init(godot_gdnative_init_options *p_options) {
-	api = p_options->api_struct;
-
-	// now find our extensions
-	for (int i = 0; i < api->num_extensions; i++) {
-		switch (api->extensions[i]->type) {
-			case GDNATIVE_EXT_NATIVESCRIPT: {
-				nativescript_api = (godot_gdnative_ext_nativescript_api_struct *)api->extensions[i];
-			}; break;
-			default: break;
-		};
-	};	
-}
-
-void GDN_EXPORT godot_gdnative_terminate(godot_gdnative_terminate_options *p_options) {
-	api = NULL;
-	nativescript_api = NULL;
-}
-
-// register constructor & callback methods
-void GDN_EXPORT godot_nativescript_init(void *p_handle) {
+void register_player(void *p_handle ) {
 	// register Player class
 	godot_instance_create_func create = { NULL, NULL, NULL };
 	create.create_func = &player_constructor;
@@ -84,87 +59,76 @@ godot_variant ready(godot_object *p_instance, void *p_method_data, void *p_user_
 
 	printf( "ready!\n" );
 
-	check_methods(p_instance);
+	{
+		godot_node_path player_path = get_node_path(p_instance);
+		godot_string player_path_gstring = api->godot_node_path_as_string(&player_path);
+		godot_char_string player_path_cstring = api->godot_string_utf8(&player_path_gstring);
+		printf("Player path= %s\n", api->godot_char_string_get_data(&player_path_cstring));
 
-	godot_string node_name = get_node_name(p_instance);
+		api->godot_string_destroy(&player_path_gstring);
+		api->godot_char_string_destroy(&player_path_cstring);
+		api->godot_node_path_destroy(&player_path);
+	}
 
-	// NOTE: prints an empty string?
-	wprintf(L"Node name=%S\n", api->godot_string_wide_str(&node_name));
+	{
+		godot_string node_name = get_node_name(p_instance);
+		godot_char_string node_name_cstring = api->godot_string_utf8(&node_name);
+		printf("Node name== %s\n", api->godot_char_string_get_data(&node_name_cstring));
 
-	// NOTE: commenting out because get_node_path fails to find Node::get_path method
-	// godot_node_path player_path = get_node_path(p_instance);
-	// godot_string player_path_gstring = api->godot_node_path_as_string(&player_path);
-	// wprintf(L" Player path= %s\n", api->godot_string_wide_str(&player_path_gstring));
+		api->godot_string_destroy(&node_name);
+		api->godot_char_string_destroy(&node_name_cstring);
+	}
 
-	// NOTE: call succeeds but doesn't find AnimatedSprite child node
-	godot_object* as = get_node(p_instance, L"AnimatedSprite");
+	godot_object* as = get_node(p_instance, "AnimatedSprite");
 
-	// NOTE: commenting out because sprite node not found
-	//set_animation(as, "up");
+	set_animation(as, "up");
+
+	api->godot_object_destroy(as);
 
 	return ret;
 }
 
 godot_variant process(godot_object *p_instance, void *p_method_data, void *p_user_data, int p_num_args, godot_variant **p_args) {
 	godot_variant ret;
-	printf( "process\n" );
+	//printf( "process\n" );
+	
+	{
+		godot_node_path player_path = get_node_path(p_instance);
+		godot_string player_path_gstring = api->godot_node_path_as_string(&player_path);
+		godot_char_string player_path_cstring = api->godot_string_utf8(&player_path_gstring);
+		//printf("Player path= %s\n", api->godot_char_string_get_data(&player_path_cstring));
+
+		api->godot_string_destroy(&player_path_gstring);
+		api->godot_char_string_destroy(&player_path_cstring);
+		api->godot_node_path_destroy(&player_path);
+	}
+
+	{
+		godot_string node_name = get_node_name(p_instance);
+
+		godot_char_string node_name_cstring = api->godot_string_utf8(&node_name);
+		//printf("Node name== %s\n", api->godot_char_string_get_data(&node_name_cstring));
+
+		api->godot_string_destroy(&node_name);
+		api->godot_char_string_destroy(&node_name_cstring);
+	}
+
 	return ret;
 }
 
-void check_methods(godot_object *instance) {
-	godot_variant v;
-	api->godot_variant_new_object(&v, instance);
-
-	// Prints 17 == Object
-	printf("Variant type=%d\n", api->godot_variant_get_type(&v));
-
-	// Node methods, all false?
-	printf("has get_path: %s\n", has_method(&v, "get_path") ? "true" : "false");
-	printf("has get_node: %s\n", has_method(&v, "get_node") ? "true" : "false");
-	printf("has get_child_count: %s\n", has_method(&v, "get_child_count") ? "true" : "false");
-	printf("has is_processing: %s\n", has_method(&v, "is_processing") ? "true" : "false");
-	printf("has get_tree: %s\n", has_method(&v, "get_tree") ? "true" : "false");
-	printf("has find_node: %s\n", has_method(&v, "find_node") ? "true" : "false");
-
-	// Node member variable getter/setter?
-	printf("has get_name: %s\n", has_method(&v, "get_name") ? "true" : "false");
-	printf("has set_name: %s\n", has_method(&v, "set_name") ? "true" : "false");
-
-	// Object methods, all false too?
-	printf("has callv: %s\n", has_method(&v, "Object::callv") ? "true" : "false");
-	printf("has emit_signal: %s\n", has_method(&v, "emit_signal") ? "true" : "false");
-
-	api->godot_variant_destroy(&v);
-}
-
-godot_bool has_method(godot_variant *variant, char *method) {
-	godot_string method_name = api->godot_string_chars_to_utf8(method);
-	godot_bool ret = api->godot_variant_has_method(variant, &method_name);
-	api->godot_string_destroy(&method_name);
-	return ret;
-}
-
-// TODO: how to access instance variables? This returns empty string
 godot_string get_node_name(godot_object *instance) {
 	char *class_name = "Node";
 	char *method_name = "get_name";
 
 	static godot_method_bind *mb = NULL;
 	if (!mb) {
-		printf("get method %s::%s\n", class_name, method_name);
-		// NOTE: call succeeds
 		mb = api->godot_method_bind_get_method(class_name, method_name);
 	}
 
-	printf("call method %s::%s\n", class_name, method_name);
+	godot_string nm;
+	const void *c_args[1] = {};
 
-	godot_variant v;
-	const void *c_args[] = {};
-
-	api->godot_method_bind_ptrcall(mb, instance, c_args, &v);
-
-	godot_string nm = api->godot_variant_as_string(&v);
-	api->godot_variant_destroy(&v);
+	api->godot_method_bind_ptrcall(mb, instance, c_args, &nm);
 
 	return nm;
 }
@@ -175,42 +139,31 @@ godot_node_path get_node_path(godot_object *instance) {
 
 	static godot_method_bind *mb = NULL;
 	if (!mb) {
-		printf("get method %s::%s\n", class_name, method_name);
-		// NOTE: this call FAILs!
 		mb = api->godot_method_bind_get_method(class_name, method_name);
 	}
 
-	printf("call method %s::%s\n", class_name, method_name);
+	godot_node_path np;
+	const void *c_args[1] = {};
 
-	godot_variant v;
-	const void *c_args[] = {};
-
-	api->godot_method_bind_ptrcall(mb, instance, c_args, &v);
-
-	godot_node_path np = api->godot_variant_as_node_path(&v);
-	api->godot_variant_destroy(&v);
-
+	api->godot_method_bind_ptrcall(mb, instance, c_args, &np);
 	return np;
 }
 
-godot_object *get_node(godot_object *instance, wchar_t *node_name) {
+godot_object *get_node(godot_object *instance, char *node_name) {
 	char *class_name = "Node";
 	char *method_name = "get_node";
 
 	static godot_method_bind *mb = NULL;
 	if (!mb) {
-		printf("get method %s::%s\n", class_name, method_name);
-		// NOTE: call succeeds
 		mb = api->godot_method_bind_get_method(class_name, method_name);
 	}
 
-	printf("call method %s::%s\n", class_name, method_name);
-
-	godot_variant v;
+	godot_object *obj;
 	godot_node_path np;
 	{
 		godot_string name;
-		api->godot_string_new_with_wide_string(&name, node_name, wcslen(node_name));
+		api->godot_string_new(&name);
+		api->godot_string_parse_utf8(&name, node_name);
 		api->godot_node_path_new(&np, &name);
 		api->godot_string_destroy(&name);
 	}
@@ -218,11 +171,8 @@ godot_object *get_node(godot_object *instance, wchar_t *node_name) {
 		&np
 	};
 
-	api->godot_method_bind_ptrcall(mb, instance, c_args, &v);
+	api->godot_method_bind_ptrcall(mb, instance, c_args, &obj);
 	api->godot_node_path_destroy(&np);
-
-	godot_object *obj = api->godot_variant_as_object(&v);
-	api->godot_variant_destroy(&v);
 
 	return obj;
 }
@@ -233,19 +183,16 @@ void set_animation(godot_object *animated_sprite, char *anim_name) {
 
 	static godot_method_bind *mb = NULL;
 	if (!mb) {
-		printf("get method %s::%s\n", class_name, method_name);
-		// NOTE: call succeeds
 		mb = api->godot_method_bind_get_method(class_name, method_name);
 	}
 
-	printf("call method %s::%s\n", class_name, method_name);
-
-	godot_variant v;
-	godot_string name = api->godot_string_chars_to_utf8(anim_name);
+	godot_string name;
+	api->godot_string_new(&name);
+	api->godot_string_parse_utf8(&name, anim_name);
 	const void *c_args[] = {
 		&name
 	};
 
-	api->godot_method_bind_ptrcall(mb, animated_sprite, c_args, &v);
+	api->godot_method_bind_ptrcall(mb, animated_sprite, c_args, NULL);
 	api->godot_string_destroy(&name);
 }
